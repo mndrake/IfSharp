@@ -96,6 +96,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{8BA6BD71-43A
 		lib\fsiAnyCpu.exe = lib\fsiAnyCpu.exe
 		lib\NuGet.dll = lib\NuGet.dll
 		lib\README.md = lib\README.md
+		lib\FSharp.Charting.Gtk.dll = lib\FSharp.Charting.Gtk.dll
 	EndProjectSection
 EndProject
 Global
