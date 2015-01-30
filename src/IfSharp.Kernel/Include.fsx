@@ -6,7 +6,9 @@
 #r "System.Data.dll"
 #r "System.Windows.Forms.DataVisualization.dll"
 #r "FSharp.Data.TypeProviders.dll"
-#r "FSharp.Charting.dll"
+#r "FSharp.Charting.Gtk.dll"
+#r "OxyPlot.dll"
+#r "OxyPlot.GtkSharp.dll"
 #r "fszmq.dll"
 
 // open the global functions and methods

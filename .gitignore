@@ -169,3 +169,5 @@ temp/
 
 # Test results produced by build
 TestResults.xml
+
+*.userprefs

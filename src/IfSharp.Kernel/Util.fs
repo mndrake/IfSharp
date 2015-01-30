@@ -66,22 +66,22 @@ module ExtensionMethods =
                 Size = (x, y);
             }
 
-        /// Converts the GenericChart to a PNG, in order to do this, we must show a form with ChartControl on it, save the bmp, then write the png to memory
-        member self.ToPng(?size) =
-
-            // get the size
-            let (width, height) = if size.IsNone then (320, 240) else size.Value
-
-            // create a new ChartControl in order to get the underlying Chart
-            let ctl = new ChartTypes.ChartControl(self)
-
-            // save
-            use ms = new MemoryStream()
-            let actualChart = ctl.Controls.[0] :?> System.Windows.Forms.DataVisualization.Charting.Chart
-            actualChart.Dock <- DockStyle.None
-            actualChart.Size <- Size(width, height)
-            actualChart.SaveImage(ms, ImageFormat.Png)
-            ms.ToArray()
+//        /// Converts the GenericChart to a PNG, in order to do this, we must show a form with ChartControl on it, save the bmp, then write the png to memory
+//        member self.ToPng(?size) =
+//
+//            // get the size
+//            let (width, height) = if size.IsNone then (320, 240) else size.Value
+//
+//            // create a new ChartControl in order to get the underlying Chart
+//            let ctl = new ChartTypes.ChartControl(self)
+//
+//            // save
+//            use ms = new MemoryStream()
+//            let actualChart = ctl.Controls.[0] :?> System.Windows.Forms.DataVisualization.Charting.Chart
+//            actualChart.Dock <- DockStyle.None
+//            actualChart.Size <- Size(width, height)
+//            actualChart.SaveImage(ms, ImageFormat.Png)
+//            ms.ToArray()
 
     type FSharp.Charting.Chart with
     
