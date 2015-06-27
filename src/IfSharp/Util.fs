@@ -1,14 +1,10 @@
 ﻿namespace IfSharp.Kernel
 
 open System
-open System.Drawing
 open System.IO
 open System.Net
 open System.Text
 open System.Web
-open System.Drawing.Imaging
-open System.Windows.Forms
-open FSharp.Charting
 
 type BinaryOutput =
     { 
@@ -32,12 +28,6 @@ type HtmlOutput =
         Html: string;
     }
 
-type GenericChartWithSize = 
-    {
-        Chart: ChartTypes.GenericChart;
-        Size: int * int;
-    }
-
 [<AutoOpen>]
 module ExtensionMethods =
 
@@ -56,40 +46,6 @@ module ExtensionMethods =
                 ex <- ex.InnerException
 
             sb.ToString()
-
-    type ChartTypes.GenericChart with 
-
-        /// Wraps a GenericChartWithSize around the GenericChart
-        member self.WithSize(x:int, y:int) =
-            {
-                Chart = self;
-                Size = (x, y);
-            }
-
-//        /// Converts the GenericChart to a PNG, in order to do this, we must show a form with ChartControl on it, save the bmp, then write the png to memory
-//        member self.ToPng(?size) =
-//
-//            // get the size
-//            let (width, height) = if size.IsNone then (320, 240) else size.Value
-//
-//            // create a new ChartControl in order to get the underlying Chart
-//            let ctl = new ChartTypes.ChartControl(self)
-//
-//            // save
-//            use ms = new MemoryStream()
-//            let actualChart = ctl.Controls.[0] :?> System.Windows.Forms.DataVisualization.Charting.Chart
-//            actualChart.Dock <- DockStyle.None
-//            actualChart.Size <- Size(width, height)
-//            actualChart.SaveImage(ms, ImageFormat.Png)
-//            ms.ToArray()
-
-    type FSharp.Charting.Chart with
-    
-        /// Wraps a GenericChartWithSize around the GenericChart
-        static member WithSize(x:int, y:int) = 
-
-            fun (ch : #ChartTypes.GenericChart) ->
-                ch.WithSize(x, y)
 
 type Util = 
 

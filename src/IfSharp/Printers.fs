@@ -3,7 +3,7 @@
 open System
 open System.Text
 open System.Web
-open FSharp.Charting
+//open FSharp.Charting
 
 module Printers = 
 
@@ -34,16 +34,6 @@ module Printers =
 
     /// Adds default display printers
     let internal addDefaultDisplayPrinters() = 
-        
-        // add generic chart printer
-        addDisplayPrinter(fun (x:ChartTypes.GenericChart) ->
-            { ContentType = "image/png"; Data = x.ToPng() }
-        )
-
-        // add chart printer
-        addDisplayPrinter(fun (x:GenericChartWithSize) ->
-            { ContentType = "image/png"; Data = x.Chart.ToPng(x.Size) }
-        )
         
         // add table printer
         addDisplayPrinter(fun (x:TableOutput) -> 

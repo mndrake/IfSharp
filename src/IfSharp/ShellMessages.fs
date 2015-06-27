@@ -1,6 +1,7 @@
 ﻿namespace IfSharp.Kernel
 
 open System
+open System.Collections.Generic
 open Newtonsoft.Json
 
 type ExecuteRequest =
@@ -27,11 +28,11 @@ type ExecuteRequest =
         // # A list of variable names from the user's namespace to be retrieved.
         // # What returns is a rich representation of each variable (dict keyed by name).
         // # See the display_data content for the structure of the representation data.
-        user_variables: array<string>;
+        //user_variables: array<string>;
 
         // # Similarly, a dict mapping names to expressions to be evaluated in the
         // # user's dict.
-        user_expressions: dict;
+        user_expressions: Dictionary<string, obj>;
 
         // # Some frontends (e.g. the Notebook) do not support stdin requests. If
         // # raw_input is called from code executed from such a frontend, a
@@ -60,8 +61,8 @@ type ExecuteReplyOk =
         payload: list<Payload>;
 
         // # Results for the user_variables and user_expressions.
-        user_variables: dict;
-        user_expressions: dict;
+        //user_variables: dict;
+        user_expressions: Dictionary<string, obj>;
     }
 
 type ExecuteReplyError =
@@ -185,28 +186,39 @@ type ObjectInfoReply =
         source: string;
     }
 
-type CompleteRequest = 
+type CompleteRequest =
     {
-        // # The text to be completed, such as 'a.is'
-        // # this may be an empty string if the frontend does not do any lexing,
-        // # in which case the kernel must figure out the completion
-        // # based on 'line' and 'cursor_pos'.
-        text: string;
+        // # The code context in which completion is requested
+        // # this may be up to an entire multiline cell, such as
+        // # 'foo = a.isal'
+        code: string;
 
-        // # The full line, such as 'print a.is'.  This allows completers to
-        // # make decisions that may require information about more than just the
-        // # current word.
-        line: string;
-
-        // # The entire block of text where the line is.  This may be useful in the
-        // # case of multiline completions where more context may be needed.  Note: if
-        // # in practice this field proves unnecessary, remove it to lighten the
-        // # messages.
-        block: string;
-
-        // # The position of the cursor where the user hit 'TAB' on the line.
-        cursor_pos: int;
+        // # The cursor position within 'code' (in unicode characters) where completion is requested
+        cursor_pos: int
     }
+
+//type CompleteRequest = 
+//    {
+//        // # The text to be completed, such as 'a.is'
+//        // # this may be an empty string if the frontend does not do any lexing,
+//        // # in which case the kernel must figure out the completion
+//        // # based on 'line' and 'cursor_pos'.
+//        text: string;
+//
+//        // # The full line, such as 'print a.is'.  This allows completers to
+//        // # make decisions that may require information about more than just the
+//        // # current word.
+//        line: string;
+//
+//        // # The entire block of text where the line is.  This may be useful in the
+//        // # case of multiline completions where more context may be needed.  Note: if
+//        // # in practice this field proves unnecessary, remove it to lighten the
+//        // # messages.
+//        block: string;
+//
+//        // # The position of the cursor where the user hit 'TAB' on the line.
+//        cursor_pos: int;
+//    }
 
 /// Custom message used only by the web front end.
 type IntellisenseRequest = {
@@ -231,21 +243,20 @@ type CompleteReply =
     {
         // # The list of all matches to the completion request, such as
         // # ['a.isalnum', 'a.isalpha'] for the above example.
-//        matches: array<string>;
-        matches: obj // changed for custom UI
+        matches: array<string>;
 
-        // # the substring of the matched text
-        // # this is typically the common prefix of the matches,
-        // # and the text that is already in the block that would be replaced by the full completion.
-        // # This would be 'a.is' in the above example.
-        matched_text: string
+        // # The range of text that should be replaced by the above matches when a completion is accepted.
+        // # typically cursor_end is the same as cursor_pos in the request.
+        cursor_start : int;
+        cursor_end : int;
+
+        // # Information that frontend plugins might use for extra display information about completions.
+        metadata : Dictionary<string, obj>;
 
         // # status should be 'ok' unless an exception was raised during the request,
         // # in which case it should be 'error', along with the usual error message content
         // # in other messages.
-        status: string
-
-        filter_start_index: int
+        status: string;
     }
 
 type HistoryRequest =
@@ -302,6 +313,37 @@ type ConnectReply =
 
 type KernelRequest = obj
 
+type LanguageInfo = 
+    {
+        // # Name of the programming language in which kernel is implemented.
+        // # Kernel included in IPython returns 'python'.
+        name: string;
+
+        // # Language version number.
+        // # It is Python version number (e.g., '2.7.3') for the kernel
+        // # included in IPython.
+        version: string;
+
+        // # mimetype for script files in this language
+        mimetype: string;
+
+        // # Extension without the dot, e.g. 'py'
+        file_extension: string;
+
+        // # Pygments lexer, for highlighting
+        // # Only needed if it differs from the top level 'language' field.
+        //pygments_lexer: string;
+
+        // # Codemirror mode, for for highlighting in the notebook.
+        // # Only needed if it differs from the top level 'language' field.
+        codemirror_mode: string;
+
+        // # Nbconvert exporter, if notebooks written with this kernel should
+        // # be exported with something other than the general 'script'
+        // # exporter.
+        //nbconvert_exporter: string;
+    }
+
 type KernelReply =
     {
         // # Version of messaging protocol (mandatory).
@@ -309,23 +351,36 @@ type KernelReply =
         // # there is any backward incompatible change.
         // # The second integer indicates minor version.  It is incremented when
         // # there is any backward compatible change.
-        protocol_version: array<int>;
+        //protocol_version: array<int>;
+        protocol_version: string;
+
+        // # The kernel implementation name
+        // # (e.g. 'ipython' for the IPython kernel)
+        implementation: string;
+
+        // # Implementation version number.
+        // # The versino number of the kernel's implementation
+        // # (e.g. IPython.__version__ for the IPython kernel)
+        implementation_version: string;
+
+        // # Information about the language of the code for the kernel
+        language_info: LanguageInfo;
 
         // # IPython version number (optional).
         // # Non-python kernel backend may not have this version number.
         // # The last component is an extra field, which may be 'dev' or
         // # 'rc1' in development version.  It is an empty string for
         // # released version.
-        ipython_version: Option<array<obj>>;
+        //ipython_version: Option<array<obj>>;
 
         // # Language version number (mandatory).
         // # It is Python version number (e.g., [2, 7, 3]) for the kernel
         // # included in IPython.
-        language_version: array<int>;
+        //language_version: array<int>;
 
         // # Programming language in which kernel is implemented (mandatory).
         // # Kernel included in IPython returns 'python'.
-        language: string
+        //language: string
     }
 
 type KernelStatus = 
@@ -352,10 +407,10 @@ type DisplayData =
         // # The data dict contains key/value pairs, where the kids are MIME
         // # types and the values are the raw data of the representation in that
         // # format.
-        data: dict;
+        data: Dictionary<string, obj>;
 
         // # Any metadata that describes the data
-        metadata: dict;
+        metadata: Dictionary<string, obj>;
     }
 
 type Pyin = 
@@ -378,8 +433,8 @@ type Pyout =
         // # data and metadata are identical to a display_data message.
         // # the object being displayed is that passed to the display hook,
         // # i.e. the *result* of the execution.
-        data: dict;
-        metadata: dict;
+        data: Dictionary<string, obj>;
+        metadata: Dictionary<string, obj>;
     }
 
 type Stream = 
@@ -387,7 +442,7 @@ type Stream =
         // # The name of the stream is one of 'stdout', 'stderr'
         name: string;
         //  # The data is an arbitrary string to be written to that stream
-        data: string;
+        text: string;
     }
 
 type ClearOutput = 
@@ -442,6 +497,7 @@ type Header =
         username: string;
         session: string;
         msg_type: string;
+        version: string;
     }
 
 type KernelMessage = 
@@ -464,21 +520,21 @@ module ShellMessages =
         | "execute_reply_ok"     -> ExecuteReplyOk (JsonConvert.DeserializeObject<ExecuteReplyOk>(messageJson))
         | "execute_reply_error"  -> ExecuteReplyError (JsonConvert.DeserializeObject<ExecuteReplyError>(messageJson))
 
-        | "object_info_request"  -> ObjectInfoRequest (JsonConvert.DeserializeObject<ObjectInfoRequest>(messageJson))
+        //| "object_info_request"  -> ObjectInfoRequest (JsonConvert.DeserializeObject<ObjectInfoRequest>(messageJson))
         | "complete_request"     -> CompleteRequest (JsonConvert.DeserializeObject<CompleteRequest>(messageJson))
-        | "complete_reply"       -> CompleteReply (JsonConvert.DeserializeObject<CompleteReply>(messageJson))
+        //| "complete_reply"       -> CompleteReply (JsonConvert.DeserializeObject<CompleteReply>(messageJson))
 
-        | "intellisense_request" -> IntellisenseRequest (JsonConvert.DeserializeObject<IntellisenseRequest>(messageJson))
+        //| "intellisense_request" -> IntellisenseRequest (JsonConvert.DeserializeObject<IntellisenseRequest>(messageJson))
 
-        | "history_request"      -> HistoryRequest (JsonConvert.DeserializeObject<HistoryRequest>(messageJson))
-        | "history_reply"        -> HistoryReply (JsonConvert.DeserializeObject<HistoryReply>(messageJson))
+        //| "history_request"      -> HistoryRequest (JsonConvert.DeserializeObject<HistoryRequest>(messageJson))
+        //| "history_reply"        -> HistoryReply (JsonConvert.DeserializeObject<HistoryReply>(messageJson))
 
-        | "connect_request"      -> ConnectRequest (JsonConvert.DeserializeObject<ConnectRequest>(messageJson))
-        | "connect_reply"        -> ConnectReply (JsonConvert.DeserializeObject<ConnectReply>(messageJson))
+        //| "connect_request"      -> ConnectRequest (JsonConvert.DeserializeObject<ConnectRequest>(messageJson))
+        //| "connect_reply"        -> ConnectReply (JsonConvert.DeserializeObject<ConnectReply>(messageJson))
 
         | "kernel_info_request"  -> KernelRequest (JsonConvert.DeserializeObject<KernelRequest>(messageJson))
         | "kernel_info_reply"    -> KernelReply (JsonConvert.DeserializeObject<KernelReply>(messageJson))
 
-        | "shutdown_request"     -> ShutdownRequest (JsonConvert.DeserializeObject<ShutdownRequest>(messageJson))
-        | "shutdown_reply"       -> ShutdownReply (JsonConvert.DeserializeObject<ShutdownReply>(messageJson))
+        //| "shutdown_request"     -> ShutdownRequest (JsonConvert.DeserializeObject<ShutdownRequest>(messageJson))
+        //| "shutdown_reply"       -> ShutdownReply (JsonConvert.DeserializeObject<ShutdownReply>(messageJson))
         | _                      -> failwith ("Unsupported messageType: " + messageType)

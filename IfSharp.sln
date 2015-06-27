@@ -3,8 +3,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 VisualStudioVersion = 12.0.21005.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "IfSharp.Kernel", "src\IfSharp.Kernel\IfSharp.Kernel.fsproj", "{2FE619B3-4756-4285-B31F-232607F62D78}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{333CAF5A-8808-4E94-9B0C-3EFE86B727AF}"
 	ProjectSection(SolutionItems) = preProject
 		.nuget\packages.config = .nuget\packages.config
@@ -82,8 +80,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "custom", "custom", "{3AAFA6
 		ipython-profile\static\custom\webintellisense.js = ipython-profile\static\custom\webintellisense.js
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "IfSharpConsole", "src\IfSharpConsole\IfSharpConsole.csproj", "{6BD0E996-0AEE-4FC7-8FB9-46E033D0C7F1}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{8BA6BD71-43AD-4532-AF2C-DA3E4E0EC136}"
 	ProjectSection(SolutionItems) = preProject
 		lib\FSharp.Compiler.dll = lib\FSharp.Compiler.dll
@@ -98,20 +94,18 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{8BA6BD71-43A
 		lib\README.md = lib\README.md
 	EndProjectSection
 EndProject
+Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "IfSharp", "src\IfSharp\IfSharp.fsproj", "{720D635D-1450-4EEA-8DCA-369329F4E5BC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{2FE619B3-4756-4285-B31F-232607F62D78}.Debug|x64.ActiveCfg = Debug|x64
-		{2FE619B3-4756-4285-B31F-232607F62D78}.Debug|x64.Build.0 = Debug|x64
-		{2FE619B3-4756-4285-B31F-232607F62D78}.Release|x64.ActiveCfg = Release|x64
-		{2FE619B3-4756-4285-B31F-232607F62D78}.Release|x64.Build.0 = Release|x64
-		{6BD0E996-0AEE-4FC7-8FB9-46E033D0C7F1}.Debug|x64.ActiveCfg = Debug|x64
-		{6BD0E996-0AEE-4FC7-8FB9-46E033D0C7F1}.Debug|x64.Build.0 = Debug|x64
-		{6BD0E996-0AEE-4FC7-8FB9-46E033D0C7F1}.Release|x64.ActiveCfg = Release|x64
-		{6BD0E996-0AEE-4FC7-8FB9-46E033D0C7F1}.Release|x64.Build.0 = Release|x64
+		{720D635D-1450-4EEA-8DCA-369329F4E5BC}.Debug|x64.ActiveCfg = Debug|x64
+		{720D635D-1450-4EEA-8DCA-369329F4E5BC}.Debug|x64.Build.0 = Debug|x64
+		{720D635D-1450-4EEA-8DCA-369329F4E5BC}.Release|x64.ActiveCfg = Release|x64
+		{720D635D-1450-4EEA-8DCA-369329F4E5BC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A8428CDC-273B-434D-AAA2-0D0164E3D329} = {9D4EDE1C-AB08-4800-9A57-4689DA45B701}

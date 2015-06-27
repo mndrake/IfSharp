@@ -1,7 +1,7 @@
 ﻿namespace IfSharp.Kernel
 
 open System.Collections.Generic
-open FSharp.Charting
+//open FSharp.Charting
 
 type ConnectionInformation = 
     {
@@ -24,4 +24,4 @@ type IntellisenseItem =
         value: string
     }
 
-type dict = Dictionary<string, obj>
+//type dict = Dictionary<string, obj>

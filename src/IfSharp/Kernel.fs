@@ -8,7 +8,7 @@ open System.Reflection
 open System.Text
 open System.Threading
 
-open FSharp.Charting
+//open FSharp.Charting
 
 open Newtonsoft.Json
 open fszmq
@@ -74,6 +74,8 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
             |> Seq.map decode
             |> Seq.toArray
 
+        //printfn "message: %A" message
+
         // find the delimiter between IDS and MSG
         let idx = Array.IndexOf(message, "<IDS|MSG>")
         let idents = message.[0..idx - 1]
@@ -113,11 +115,12 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
             msg_id = Guid.NewGuid().ToString();
             session = sourceEnvelope.Header.session;
             username = sourceEnvelope.Header.username;
+            version = "5.0";
         }
 
     /// Convenience method for sending a message
     let sendMessage (socket) (envelope) (messageType) (content) =
-
+        //printfn "send: %A" content
         let header = createHeader messageType envelope
 
         for ident in envelope.Identifiers do
@@ -145,12 +148,20 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
 
     /// Handles a 'kernel_info_request' message
     let kernelInfoRequest(msg : KernelMessage) (content : KernelRequest) = 
+        //printfn "** kernel_info_request **"
         let content = 
             {
-                protocol_version = [| 4; 0 |]; 
-                ipython_version = Some [| 3 ; 0 |];
-                language_version = [| 1; 0; 0 |];
-                language = "fsharp";
+                protocol_version = "5.0"; 
+                implementation = "ifsharp_kernel";
+                implementation_version = "1.0";
+                language_info = 
+                    {
+                        name = "fsharp";
+                        version = "3.1";
+                        mimetype = "text/x-fsharp";
+                        codemirror_mode = "mllike";
+                        file_extension = ".fsx" 
+                    }
             }
 
         sendMessage shellSocket msg "kernel_info_reply" content
@@ -161,14 +172,14 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
         
         if lastMessage.IsSome then
 
-            let d = dict()
+            let d = Dictionary<string, obj>()
             d.Add(contentType, displayItem)
 
-            let reply = { execution_count = executionCount; data = d; metadata = dict() }
+            let reply = { execution_count = executionCount; data = d; metadata = Dictionary<string, obj>() }
             sendMessage ioSocket lastMessage.Value messageType reply
 
     /// Sends a message to pyout
-    let pyout (message) = sendDisplayData "text/plain" message "pyout"
+    let pyout (message) = sendDisplayData "text/plain" message "execute_result"
 
     /// Preprocesses the code and evaluates it
     let preprocessAndEval(code) = 
@@ -239,15 +250,14 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
                 }
 
             sendMessage shellSocket msg "execute_reply" executeReply
-            sendMessage ioSocket msg "stream" { name = "stderr"; data = err; }
+            sendMessage ioSocket msg "stream" { name = "stderr"; text = err; }
         else
             let executeReply =
                 {
                     status = "ok";
                     execution_count = executionCount;
                     payload = payload |> Seq.toList;
-                    user_variables = dict();
-                    user_expressions = dict()
+                    user_expressions = Dictionary<string, obj>()
                 }
 
             sendMessage shellSocket msg "execute_reply" executeReply
@@ -262,7 +272,7 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
                         let printer = Printers.findDisplayPrinter(it.ReflectionType)
                         let (_, callback) = printer
                         let callbackValue = callback(it.ReflectionValue)
-                        sendDisplayData callbackValue.ContentType callbackValue.Data "pyout"
+                        sendDisplayData callbackValue.ContentType callbackValue.Data "execute_result"
 
                     | None -> ()
 
@@ -271,81 +281,82 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
 
     /// Handles a 'complete_request' message
     let completeRequest (msg : KernelMessage) (content : CompleteRequest) = 
-        let decls, pos, filterString = GetDeclarations(content.line, 0, content.cursor_pos)
+        let decls, pos, filterString = GetDeclarations(content.code, 0, content.cursor_pos)
         let items = decls |> Array.map (fun x -> x.Value)
         let newContent = 
             {
-                matched_text = filterString
-                filter_start_index = pos
                 matches = items
+                cursor_start = pos
+                cursor_end = pos
+                metadata = Dictionary<string, obj>()
                 status = "ok"
             }
 
         sendMessage (shellSocket) (msg) ("complete_reply") (newContent)
 
-    /// Handles a 'intellisense_request' message
-    let intellisenseRequest (msg : KernelMessage) (content : IntellisenseRequest) = 
-
-        // in our custom UI we put all cells in content.text and more information in content.block
-        // the position is contains the selected index and the relative character and line number
-        let cells = JsonConvert.DeserializeObject<array<string>>(content.text)
-        let codes = cells |> Seq.append [headerCode]
-        let position = JsonConvert.DeserializeObject<BlockType>(content.block)
-
-        // calculate absolute line number
-        let lineOffset = 
-            codes
-            |> Seq.take (position.selectedIndex + 1)
-            |> Seq.map (fun x -> x.Split('\n').Length)
-            |> Seq.sum
-
-        let realLineNumber = position.line + lineOffset + 1
-        let codeString = String.Join("\n", codes)
-        let (_, decls, tcr, filterStartIndex) = compiler.GetDeclarations(codeString, realLineNumber, position.ch)
-        
-        let matches = 
-            decls
-            |> Seq.map (fun x -> { glyph = x.Glyph; name = x.Name; documentation = x.Documentation; value = x.Value })
-            |> Seq.toList
-
-        let newContent = 
-            {
-                matched_text = ""
-                filter_start_index = filterStartIndex
-                matches = matches
-                status = "ok"
-            }
-        
-        // send back errors
-        let errors = 
-            [|
-                yield! tcr.Check.Errors |> Seq.map CustomErrorInfo.From
-                yield! tcr.Preprocess.Errors
-            |]
-
-        // create an array of tuples <cellNumber>, <line>
-        let allLines = 
-            [|
-                for index, cell in cells |> Seq.mapi (fun i x -> i, x) do
-                    for cellLineNumber, line in cell.Split('\n') |> Seq.mapi (fun i x -> i, x) do
-                        yield index, cellLineNumber, line
-            |]
-
-        let newErrors = 
-            [|
-                let headerLines = headerCode.Split('\n')
-                for e in errors do
-                    let realLineNumber = 
-                        let x = e.StartLine - headerLines.Length - 1
-                        max x 0
-
-                    let cellNumber, cellLineNumber, _ = allLines.[realLineNumber]
-                    yield { e with CellNumber = cellNumber; StartLine = cellLineNumber; EndLine = cellLineNumber; }
-            |]
-            |> Array.filter (fun x -> x.Subcategory <> "parse")
-            
-        sendDisplayData "errors" newErrors "display_data"
-        sendMessage (shellSocket) (msg) ("complete_reply") (newContent)
+//    /// Handles a 'intellisense_request' message
+//    let intellisenseRequest (msg : KernelMessage) (content : IntellisenseRequest) = 
+//
+//        // in our custom UI we put all cells in content.text and more information in content.block
+//        // the position is contains the selected index and the relative character and line number
+//        let cells = JsonConvert.DeserializeObject<array<string>>(content.text)
+//        let codes = cells |> Seq.append [headerCode]
+//        let position = JsonConvert.DeserializeObject<BlockType>(content.block)
+//
+//        // calculate absolute line number
+//        let lineOffset = 
+//            codes
+//            |> Seq.take (position.selectedIndex + 1)
+//            |> Seq.map (fun x -> x.Split('\n').Length)
+//            |> Seq.sum
+//
+//        let realLineNumber = position.line + lineOffset + 1
+//        let codeString = String.Join("\n", codes)
+//        let (_, decls, tcr, filterStartIndex) = compiler.GetDeclarations(codeString, realLineNumber, position.ch)
+//        
+//        let matches = 
+//            decls
+//            |> Seq.map (fun x -> { glyph = x.Glyph; name = x.Name; documentation = x.Documentation; value = x.Value })
+//            |> Seq.toList
+//
+//        let newContent = 
+//            {
+//                matched_text = ""
+//                filter_start_index = filterStartIndex
+//                matches = matches
+//                status = "ok"
+//            }
+//        
+//        // send back errors
+//        let errors = 
+//            [|
+//                yield! tcr.Check.Errors |> Seq.map CustomErrorInfo.From
+//                yield! tcr.Preprocess.Errors
+//            |]
+//
+//        // create an array of tuples <cellNumber>, <line>
+//        let allLines = 
+//            [|
+//                for index, cell in cells |> Seq.mapi (fun i x -> i, x) do
+//                    for cellLineNumber, line in cell.Split('\n') |> Seq.mapi (fun i x -> i, x) do
+//                        yield index, cellLineNumber, line
+//            |]
+//
+//        let newErrors = 
+//            [|
+//                let headerLines = headerCode.Split('\n')
+//                for e in errors do
+//                    let realLineNumber = 
+//                        let x = e.StartLine - headerLines.Length - 1
+//                        max x 0
+//
+//                    let cellNumber, cellLineNumber, _ = allLines.[realLineNumber]
+//                    yield { e with CellNumber = cellNumber; StartLine = cellLineNumber; EndLine = cellLineNumber; }
+//            |]
+//            |> Array.filter (fun x -> x.Subcategory <> "parse")
+//            
+//        sendDisplayData "errors" newErrors "display_data"
+//        sendMessage (shellSocket) (msg) ("complete_reply") (newContent)
 
     /// Handles a 'connect_request' message
     let connectRequest (msg : KernelMessage) (content : ConnectRequest) = 
@@ -394,17 +405,17 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
         while true do
 
             let msg = recvMessage (shellSocket)
-
+            //printfn "request: %A" msg.Content
             try
                 match msg.Content with
                 | KernelRequest(r)       -> kernelInfoRequest msg r
                 | ExecuteRequest(r)      -> executeRequest msg r
                 | CompleteRequest(r)     -> completeRequest msg r
-                | IntellisenseRequest(r) -> intellisenseRequest msg r
-                | ConnectRequest(r)      -> connectRequest msg r
-                | ShutdownRequest(r)     -> shutdownRequest msg r
-                | HistoryRequest(r)      -> historyRequest msg r
-                | ObjectInfoRequest(r)   -> objectInfoRequest msg r
+                //| IntellisenseRequest(r) -> intellisenseRequest msg r
+                //| ConnectRequest(r)      -> connectRequest msg r
+                //| ShutdownRequest(r)     -> shutdownRequest msg r
+                //| HistoryRequest(r)      -> historyRequest msg r
+                //| ObjectInfoRequest(r)   -> objectInfoRequest msg r
                 | _                      -> logMessage (String.Format("Unknown content type. msg_type is `{0}`", msg.Header.msg_type))
             with 
             | ex -> handleException ex
