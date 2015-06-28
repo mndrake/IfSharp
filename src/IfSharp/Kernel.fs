@@ -119,7 +119,9 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
 
     /// Convenience method for sending a message
     let sendMessage (socket:NetMQSocket) envelope messageType content =
+        #if DEBUG
         printfn "send: %A" content
+        #endif
         let header = createHeader messageType envelope
 
         for ident in envelope.Identifiers do
@@ -324,14 +326,23 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
     /// Handles a 'inspect_request' message
     let inspectRequest (msg : KernelMessage) (content : InspectRequest) =
         // TODO: actually handle this
+        #if DEBUG
         printfn "content: %A" content
 
+        let dataDict = Dictionary<string,obj>()
+        dataDict.["text/plain"] <- box "hello world"
 
+        let reply = 
+            {
+                status = "ok";
+                data = dataDict;
+                metadata = Dictionary<string,obj>()
+            }
 
- 
-
-
+        sendMessage ioSocket msg "inspect_reply" reply
+        #else
         ()
+        #endif
 
     /// Loops forever receiving messages from the client and processing them
     let doShell() =
@@ -347,7 +358,11 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
         while true do
 
             let msg = recvMessage (shellSocket)
+
+            #if DEBUG
             printfn "request: %A" msg.Content
+            #endif
+
             try
                 match msg.Content with
                 | KernelRequest(r)       -> kernelInfoRequest msg r
