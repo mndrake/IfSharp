@@ -11,10 +11,11 @@ open System.Threading
 //open FSharp.Charting
 
 open Newtonsoft.Json
-open fszmq
-open fszmq.Socket
+open NetMQ
+open NetMQ.Sockets
+open zmq
 
-type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Socket, shellSocket : Socket, hbSocket : Socket, controlSocket : Socket, stdinSocket : Socket) = 
+type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : NetMQSocket, shellSocket : NetMQSocket, hbSocket : NetMQSocket, controlSocket : NetMQSocket, stdinSocket : NetMQSocket) = 
 
     let data = new List<BinaryOutput>()
     let payload = new List<Payload>()
@@ -66,15 +67,13 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
         sw.ToString()
 
     /// Constructs an 'envelope' from the specified socket
-    let recvMessage (socket) = 
+    let recvMessage (socket:NetMQSocket) = 
         
         // receive all parts of the message
         let message =
-            recvAll (socket)
+            socket.ReceiveMessages()
             |> Seq.map decode
             |> Seq.toArray
-
-        //printfn "message: %A" message
 
         // find the delimiter between IDS and MSG
         let idx = Array.IndexOf(message, "<IDS|MSG>")
@@ -119,8 +118,8 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
         }
 
     /// Convenience method for sending a message
-    let sendMessage (socket) (envelope) (messageType) (content) =
-        //printfn "send: %A" content
+    let sendMessage (socket:NetMQSocket) envelope messageType content =
+        printfn "send: %A" content
         let header = createHeader messageType envelope
 
         for ident in envelope.Identifiers do
@@ -287,76 +286,12 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
             {
                 matches = items
                 cursor_start = pos
-                cursor_end = pos
+                cursor_end = content.cursor_pos
                 metadata = Dictionary<string, obj>()
                 status = "ok"
             }
 
         sendMessage (shellSocket) (msg) ("complete_reply") (newContent)
-
-//    /// Handles a 'intellisense_request' message
-//    let intellisenseRequest (msg : KernelMessage) (content : IntellisenseRequest) = 
-//
-//        // in our custom UI we put all cells in content.text and more information in content.block
-//        // the position is contains the selected index and the relative character and line number
-//        let cells = JsonConvert.DeserializeObject<array<string>>(content.text)
-//        let codes = cells |> Seq.append [headerCode]
-//        let position = JsonConvert.DeserializeObject<BlockType>(content.block)
-//
-//        // calculate absolute line number
-//        let lineOffset = 
-//            codes
-//            |> Seq.take (position.selectedIndex + 1)
-//            |> Seq.map (fun x -> x.Split('\n').Length)
-//            |> Seq.sum
-//
-//        let realLineNumber = position.line + lineOffset + 1
-//        let codeString = String.Join("\n", codes)
-//        let (_, decls, tcr, filterStartIndex) = compiler.GetDeclarations(codeString, realLineNumber, position.ch)
-//        
-//        let matches = 
-//            decls
-//            |> Seq.map (fun x -> { glyph = x.Glyph; name = x.Name; documentation = x.Documentation; value = x.Value })
-//            |> Seq.toList
-//
-//        let newContent = 
-//            {
-//                matched_text = ""
-//                filter_start_index = filterStartIndex
-//                matches = matches
-//                status = "ok"
-//            }
-//        
-//        // send back errors
-//        let errors = 
-//            [|
-//                yield! tcr.Check.Errors |> Seq.map CustomErrorInfo.From
-//                yield! tcr.Preprocess.Errors
-//            |]
-//
-//        // create an array of tuples <cellNumber>, <line>
-//        let allLines = 
-//            [|
-//                for index, cell in cells |> Seq.mapi (fun i x -> i, x) do
-//                    for cellLineNumber, line in cell.Split('\n') |> Seq.mapi (fun i x -> i, x) do
-//                        yield index, cellLineNumber, line
-//            |]
-//
-//        let newErrors = 
-//            [|
-//                let headerLines = headerCode.Split('\n')
-//                for e in errors do
-//                    let realLineNumber = 
-//                        let x = e.StartLine - headerLines.Length - 1
-//                        max x 0
-//
-//                    let cellNumber, cellLineNumber, _ = allLines.[realLineNumber]
-//                    yield { e with CellNumber = cellNumber; StartLine = cellLineNumber; EndLine = cellLineNumber; }
-//            |]
-//            |> Array.filter (fun x -> x.Subcategory <> "parse")
-//            
-//        sendDisplayData "errors" newErrors "display_data"
-//        sendMessage (shellSocket) (msg) ("complete_reply") (newContent)
 
     /// Handles a 'connect_request' message
     let connectRequest (msg : KernelMessage) (content : ConnectRequest) = 
@@ -386,9 +321,16 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
         // TODO: actually handle this
         sendMessage shellSocket msg "history_reply" { history = [] }
 
-    /// Handles a 'object_info_request' message
-    let objectInfoRequest (msg : KernelMessage) (content : ObjectInfoRequest) =
+    /// Handles a 'inspect_request' message
+    let inspectRequest (msg : KernelMessage) (content : InspectRequest) =
         // TODO: actually handle this
+        printfn "content: %A" content
+
+
+
+ 
+
+
         ()
 
     /// Loops forever receiving messages from the client and processing them
@@ -405,17 +347,16 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
         while true do
 
             let msg = recvMessage (shellSocket)
-            //printfn "request: %A" msg.Content
+            printfn "request: %A" msg.Content
             try
                 match msg.Content with
                 | KernelRequest(r)       -> kernelInfoRequest msg r
                 | ExecuteRequest(r)      -> executeRequest msg r
                 | CompleteRequest(r)     -> completeRequest msg r
-                //| IntellisenseRequest(r) -> intellisenseRequest msg r
                 //| ConnectRequest(r)      -> connectRequest msg r
                 //| ShutdownRequest(r)     -> shutdownRequest msg r
                 //| HistoryRequest(r)      -> historyRequest msg r
-                //| ObjectInfoRequest(r)   -> objectInfoRequest msg r
+                | InspectRequest(r)   -> inspectRequest msg r
                 | _                      -> logMessage (String.Format("Unknown content type. msg_type is `{0}`", msg.Header.msg_type))
             with 
             | ex -> handleException ex
@@ -425,9 +366,9 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Soc
 
         try
             while true do
-                let bytes = recv hbSocket
+                let bytes = hbSocket.Receive()
                 let str = decode bytes
-                send hbSocket bytes
+                hbSocket.Send(bytes)
         with
         | ex -> handleException ex
 

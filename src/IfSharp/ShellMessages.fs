@@ -84,15 +84,20 @@ type ExecuteReplyError =
         traceback: array<string>;
     }
 
-type ObjectInfoRequest =
+type InspectRequest =
     {
-        // # The (possibly dotted) name of the object to be searched in all
-        // # relevant namespaces
-        oname: string;
+        // # The code context in which introspection is requested
+        // # this may be up to an entire multiline cell.
+        code : string;
 
-        // # The level of detail desired.  The default (0) is equivalent to typing
+        // # The cursor position within 'code' (in unicode characters) where inspection is requested
+        cursor_pos : int;
+
+        // # The level of detail desired.  In IPython, the default (0) is equivalent to typing
         // # 'x?' at the prompt, 1 is equivalent to 'x??'.
-        detail_level: int;
+        // # The difference is up to kernels, but in IPython level 1 includes the source code
+        // # if available.
+        detail_level : int;
     }
 
 type ArgsSpec =
@@ -113,77 +118,14 @@ type ArgsSpec =
         defaults : array<string>;
     }
 
-type ObjectInfoReply =
+type InspectReply =
     {
-        // # The name the object was requested under
-        name: string;
+        // # 'ok' if the request succeeded or 'error', with error information as in all other replies.
+        status : string;
 
-        // # Boolean flag indicating whether the named object was found or not.  If
-        // # it's false, all other fields will be empty.
-        found: bool;
-
-        // # Flags for magics and system aliases
-        ismagic: bool;
-        isalias: bool;
-
-        // # The name of the namespace where the object was found ('builtin',
-        // # 'magics', 'alias', 'interactive', etc.)
-        ``namespace``: string;
-
-        // # The type name will be type.__name__ for normal Python objects, but it
-        // # can also be a string like 'Magic function' or 'System alias'
-        type_name: string;
-
-        // # The string form of the object, possibly truncated for length if
-        // # detail_level is 0
-        string_form: string;
-
-        // # For objects with a __class__ attribute this will be set
-        base_class: string;
-
-        // # For objects with a __len__ attribute this will be set
-        length: int;
-
-        // # If the object is a function, class or method whose file we can find,
-        // # we give its full path
-        file: string;
-
-        // # For pure Python callable objects, we can reconstruct the object
-        // # definition line which provides its call signature.  For convenience this
-        // # is returned as a single 'definition' field, but below the raw parts that
-        // # compose it are also returned as the argspec field.
-        definition: string;
-
-        // # The individual parts that together form the definition string.  Clients
-        // # with rich display capabilities may use this to provide a richer and more
-        // # precise representation of the definition line (e.g. by highlighting
-        // # arguments based on the user's cursor position).  For non-callable
-        // # objects, this field is empty.
-        argspec: ArgsSpec;
-
-        // # For instances, provide the constructor signature (the definition of
-        // # the __init__ method):
-        init_definition: string;
-
-        // # Docstrings: for any object (function, method, module, package) with a
-        // # docstring, we show it.  But in addition, we may provide additional
-        // # docstrings.  For example, for instances we will show the constructor
-        // # and class docstrings as well, if available.
-        docstring: string;
-
-        // # For instances, provide the constructor and class docstrings
-        init_docstring: string;
-        class_docstring : string;
-
-        // # If it's a callable object whose call method has a separate docstring and
-        // # definition line:
-        call_def: string;
-        call_docstring: string;
-
-        // # If detail_level was 1, we also try to find the source code that
-        // # defines the object, if possible.  The string 'None' will indicate
-        // # that no source was found.
-        source: string;
+        // # data can be empty if nothing is found
+        data : Dictionary<string,obj>;
+        metadata : Dictionary<string,obj>;
     }
 
 type CompleteRequest =
@@ -196,37 +138,6 @@ type CompleteRequest =
         // # The cursor position within 'code' (in unicode characters) where completion is requested
         cursor_pos: int
     }
-
-//type CompleteRequest = 
-//    {
-//        // # The text to be completed, such as 'a.is'
-//        // # this may be an empty string if the frontend does not do any lexing,
-//        // # in which case the kernel must figure out the completion
-//        // # based on 'line' and 'cursor_pos'.
-//        text: string;
-//
-//        // # The full line, such as 'print a.is'.  This allows completers to
-//        // # make decisions that may require information about more than just the
-//        // # current word.
-//        line: string;
-//
-//        // # The entire block of text where the line is.  This may be useful in the
-//        // # case of multiline completions where more context may be needed.  Note: if
-//        // # in practice this field proves unnecessary, remove it to lighten the
-//        // # messages.
-//        block: string;
-//
-//        // # The position of the cursor where the user hit 'TAB' on the line.
-//        cursor_pos: int;
-//    }
-
-/// Custom message used only by the web front end.
-type IntellisenseRequest = {
-    text: string
-    line: string
-    block: string
-    cursor_pos: int
-}
 
 type BlockType =
     {
@@ -466,9 +377,8 @@ type ShellMessage =
     | ExecuteReplyError of ExecuteReplyError
 
     // intellisense
-    | ObjectInfoRequest of ObjectInfoRequest
+    | InspectRequest of InspectRequest
     | CompleteRequest of CompleteRequest
-    | IntellisenseRequest of IntellisenseRequest
     | CompleteReply of CompleteReply
 
     // history
@@ -517,24 +427,10 @@ module ShellMessages =
         
         match messageType with
         | "execute_request"      -> ExecuteRequest (JsonConvert.DeserializeObject<ExecuteRequest>(messageJson))
-        | "execute_reply_ok"     -> ExecuteReplyOk (JsonConvert.DeserializeObject<ExecuteReplyOk>(messageJson))
-        | "execute_reply_error"  -> ExecuteReplyError (JsonConvert.DeserializeObject<ExecuteReplyError>(messageJson))
-
-        //| "object_info_request"  -> ObjectInfoRequest (JsonConvert.DeserializeObject<ObjectInfoRequest>(messageJson))
+        | "inspect_request"      -> InspectRequest (JsonConvert.DeserializeObject<InspectRequest>(messageJson))
         | "complete_request"     -> CompleteRequest (JsonConvert.DeserializeObject<CompleteRequest>(messageJson))
-        //| "complete_reply"       -> CompleteReply (JsonConvert.DeserializeObject<CompleteReply>(messageJson))
-
-        //| "intellisense_request" -> IntellisenseRequest (JsonConvert.DeserializeObject<IntellisenseRequest>(messageJson))
-
         //| "history_request"      -> HistoryRequest (JsonConvert.DeserializeObject<HistoryRequest>(messageJson))
-        //| "history_reply"        -> HistoryReply (JsonConvert.DeserializeObject<HistoryReply>(messageJson))
-
         //| "connect_request"      -> ConnectRequest (JsonConvert.DeserializeObject<ConnectRequest>(messageJson))
-        //| "connect_reply"        -> ConnectReply (JsonConvert.DeserializeObject<ConnectReply>(messageJson))
-
         | "kernel_info_request"  -> KernelRequest (JsonConvert.DeserializeObject<KernelRequest>(messageJson))
-        | "kernel_info_reply"    -> KernelReply (JsonConvert.DeserializeObject<KernelReply>(messageJson))
-
         //| "shutdown_request"     -> ShutdownRequest (JsonConvert.DeserializeObject<ShutdownRequest>(messageJson))
-        //| "shutdown_reply"       -> ShutdownReply (JsonConvert.DeserializeObject<ShutdownReply>(messageJson))
         | _                      -> failwith ("Unsupported messageType: " + messageType)

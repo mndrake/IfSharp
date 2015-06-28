@@ -10,7 +10,8 @@
 //#r "FSharp.Charting.Gtk.dll"
 //#r "OxyPlot.dll"
 //#r "OxyPlot.GtkSharp.dll"
-#r "fszmq.dll"
+#r "NetMQ.dll"
+//#r "fszmq.dll"
 
 // open the global functions and methods
 open IfSharp.Kernel

@@ -1,0 +1,3 @@
+﻿{ "display_name": "fsharp", 
+  "language": "fsharp", 
+  "argv": [ %s, "{connection_file}" ] }

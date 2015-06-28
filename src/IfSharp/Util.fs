@@ -49,6 +49,9 @@ module ExtensionMethods =
 
 type Util = 
 
+    static member IsRunningOnMono() = 
+        not <| obj.ReferenceEquals(Type.GetType("Mono.Runtime"), null) 
+
     /// Wraps a LatexOutput around a string in order to send to the UI.
     static member Latex (str) =
         { Latex = str}
@@ -105,3 +108,13 @@ type Util =
     /// Loads a local image from disk and wraps a BinaryOutput around the image data.
     static member Image (fileName:string) =
         Util.Image (File.ReadAllBytes(fileName))
+
+
+module zmq =
+  open NetMQ
+
+     /// Operator equivalent to `Socket.send`
+  let (<<|) (socket: IOutgoingSocket) data = socket.Send(data)
+
+  /// Operator equivalent to `Socket.sendMore`
+  let (<~|) (socket: IOutgoingSocket) (data:byte[]) = socket.SendMore(data)

@@ -8,6 +8,6 @@ module Globals =
 
     let Display = IfSharp.Kernel.App.Display
 
-//    let Help = IfSharp.Kernel.App.Help
+    let Help = IfSharp.Kernel.App.Help
 
     let Clear = IfSharp.Kernel.App.Clear

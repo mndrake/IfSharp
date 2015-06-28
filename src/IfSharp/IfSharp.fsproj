@@ -47,13 +47,18 @@
       <HintPath>..\..\packages\Newtonsoft.Json.7.0.1\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System.Web" />
-    <Reference Include="fszmq">
-      <HintPath>..\..\packages\fszmq.4.0.8\lib\net45\fszmq.dll</HintPath>
+    <Reference Include="NetMQ">
+      <HintPath>..\..\packages\NetMQ.3.3.0.11\lib\net40\NetMQ.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="Resources\" />
+    <EmbeddedResource Include="Resources\kernel.json">
+      <LogicalName>kernel.json</LogicalName>
+    </EmbeddedResource>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Config.fs" />
+    <Compile Include="IfSharpResources.fs" />
     <Compile Include="NuGetManager.fs" />
     <Compile Include="FsCompiler.fs" />
     <Compile Include="Util.fs" />
@@ -65,12 +70,11 @@
     <Compile Include="App.fs" />
     <Compile Include="Globals.fs" />
     <Compile Include="Program.fs" />
-  </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets" />
-  <ItemGroup>
     <None Include="Include.fsx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Include="packages.config" />
+    <None Include="Scratch.fsx" />
   </ItemGroup>
+  <Import Project="$(MSBuildExtensionsPath32)\..\Microsoft SDKs\F#\3.1\Framework\v4.0\Microsoft.FSharp.Targets" />
 </Project>

@@ -15,13 +15,3 @@ type ConnectionInformation =
         transport: string;
         iopub_port: int;
     }
-
-type IntellisenseItem = 
-    {
-        glyph: int
-        name: string
-        documentation: string
-        value: string
-    }
-
-//type dict = Dictionary<string, obj>
