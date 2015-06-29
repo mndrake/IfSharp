@@ -81,3 +81,8 @@ module Printers =
         addDisplayPrinter(fun (x:BinaryOutput) ->
             x
         )
+
+        // add chart printer
+        addDisplayPrinter (fun (x: IfSharp.Charting.ChartTypes.ChartBase) -> 
+            { ContentType = "text/html"; Data = x.ToHtml()}
+        )

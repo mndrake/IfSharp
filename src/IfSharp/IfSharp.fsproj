@@ -62,6 +62,7 @@
     <Compile Include="NuGetManager.fs" />
     <Compile Include="FsCompiler.fs" />
     <Compile Include="Util.fs" />
+    <Compile Include="Charting.fs" />
     <Compile Include="MainTypes.fs" />
     <Compile Include="ShellMessages.fs" />
     <Compile Include="Evaluation.fs" />
