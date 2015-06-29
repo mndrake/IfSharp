@@ -147,3 +147,16 @@ type Histogram =
         chart.Bins <- value
         chart    
 
+type Chart =
+    static member Line(data,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle) = 
+        let chart = ChartTypes.LineChart()
+        chart.addSeries(data)
+        if XTitle.IsSome then chart.xLabel <- XTitle.Value
+        if YTitle.IsSome then chart.yLabel <- YTitle.Value
+        chart
+
+    static member Histogram(data, ?Bins) =
+        let chart = ChartTypes.HistogramChart()
+        chart.Data <- data
+        if Bins.IsSome then chart.Bins <- Bins.Value
+        chart
