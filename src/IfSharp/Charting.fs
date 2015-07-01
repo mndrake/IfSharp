@@ -91,6 +91,19 @@ module ChartTypes =
             let data : Series seq = this.["data"] |> unbox
             this.["data"] <- Seq.append data (seq [values |> Seq.map (fun p -> {x = fst p; y = snd p})])
 
+    type BarPlotItem = {label:string; value:float; baseline:float; prediction:float}
+
+    type BarChart() =
+        inherit ChartBase()
+        do
+            base.["chart_type"] <- "bar"
+            base.["x_accessor"] <- "value"
+            base.["y_accessor"] <- "label"
+            base.["animate_on_load"] <- true
+
+        member this.Data 
+            with get() : seq<BarPlotItem> = this.["data"] |> unbox
+             and set v = this.["data"] <- v                     
 
     type HistogramChart() =
         inherit ChartBase()
@@ -148,6 +161,7 @@ type Histogram =
         chart    
 
 type Chart =
+
     static member Line(data,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle) = 
         let chart = ChartTypes.LineChart()
         chart.addSeries(data)
@@ -159,4 +173,9 @@ type Chart =
         let chart = ChartTypes.HistogramChart()
         chart.Data <- data
         if Bins.IsSome then chart.Bins <- Bins.Value
+        chart
+
+    static member Bar(data) =
+        let chart = ChartTypes.BarChart()
+        chart.Data <- data |> Seq.map (fun (l,v) -> {ChartTypes.BarPlotItem.label=l; ChartTypes.BarPlotItem.value=v; ChartTypes.BarPlotItem.baseline=0.; ChartTypes.BarPlotItem.prediction=0.})
         chart
