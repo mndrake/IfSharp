@@ -42,10 +42,9 @@ type ExecuteRequest =
 
 type Payload = 
     {
-        html: string;
         source: string;
-        start_line_number: int;
-        text: string;
+        start: int;
+        data: Dictionary<string,obj>;
     }
 
 type ExecuteReplyOk =
@@ -122,6 +121,7 @@ type InspectReply =
     {
         // # 'ok' if the request succeeded or 'error', with error information as in all other replies.
         status : string;
+        found: bool;
 
         // # data can be empty if nothing is found
         data : Dictionary<string,obj>;

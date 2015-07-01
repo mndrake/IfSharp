@@ -327,7 +327,25 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
     let inspectRequest (msg : KernelMessage) (content : InspectRequest) =
         // TODO: actually handle this
         #if DEBUG
-        printfn "content: %A" content
+        //content.code
+
+        // in our custom UI we put all cells in content.text and more information in content.block
+        // the position is contains the selected index and the relative character and line number
+//
+//        let codes = cells |> Seq.append [headerCode]
+////        let position = JsonConvert.DeserializeObject<BlockType>(content.block)
+//        // calculate absolute line number
+//        let lineOffset = 
+//            codes
+//            |> Seq.take (content.cursor_pos + 1)
+//            |> Seq.map (fun x -> x.Split('\n').Length)
+//            |> Seq.sum
+//        let realLineNumber = lineOffset + 1
+//        let codeString = String.Join("\n", codes)
+
+
+
+        //compiler.GetToolTipText(codeString,realLineNumber,1)
 
         let dataDict = Dictionary<string,obj>()
         dataDict.["text/plain"] <- box "hello world"
@@ -335,11 +353,12 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
         let reply = 
             {
                 status = "ok";
+                found = true;
                 data = dataDict;
                 metadata = Dictionary<string,obj>()
             }
 
-        sendMessage ioSocket msg "inspect_reply" reply
+        sendMessage shellSocket msg "inspect_reply" reply
         #else
         ()
         #endif
@@ -378,7 +397,6 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
    
     /// Loops repeating message from the client
     let doHeartbeat() =
-
         try
             while true do
                 let bytes = hbSocket.Receive()
@@ -394,7 +412,9 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
 
     /// Sends auto complete information to the client
     member __.AddPayload (text) =
-        payload.Add( { html = ""; source = "page"; start_line_number = 1; text = text })
+        let dataDict = Dictionary<string,obj>()
+        dataDict.["text/plain"] <- text
+        payload.Add( { source = "page"; start = 1; data = dataDict })
 
     /// Adds display data to the list of display data to send to the client
     member __.SendDisplayData (contentType, displayItem) =
