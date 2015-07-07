@@ -160,7 +160,7 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
                         name = "fsharp";
                         version = "3.1";
                         mimetype = "text/x-fsharp";
-                        codemirror_mode = "mllike";
+                        codemirror_mode = "fsharp";
                         file_extension = ".fsx" 
                     }
             }
