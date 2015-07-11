@@ -171,3 +171,5 @@ temp/
 TestResults.xml
 
 *.userprefs
+
+ipython-profile/.idea/*
