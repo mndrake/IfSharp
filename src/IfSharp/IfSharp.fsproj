@@ -7,7 +7,8 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>IfSharp</RootNamespace>
     <AssemblyName>IfSharp</AssemblyName>
-    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
+    <UseMSBuildEngine>False</UseMSBuildEngine>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DebugSymbols>true</DebugSymbols>
@@ -56,7 +57,7 @@
   <ItemGroup>
     <Folder Include="Resources\" />
     <EmbeddedResource Include="Resources\kernel.json">
-      <LogicalName>kernel.json</LogicalName>
+      <LogicalName>Resources.kernel.json</LogicalName>
     </EmbeddedResource>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Config.fs" />
