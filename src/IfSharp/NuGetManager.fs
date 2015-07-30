@@ -109,7 +109,13 @@ module NuGetManagerInternals =
 type NuGetManager (executingDirectory : string) =
 
     let syncObject = Object()
-    let nugetExecutable = Path.Combine(executingDirectory, "nuget.exe")
+
+    let nugetExecutable = 
+        let nugetExe = Path.Combine(executingDirectory, "nuget.exe")
+        match Util.IsRunningOnMono() with
+        | true  -> String.Format("mono {0}", nugetExe)
+        | false -> nugetExe
+
     let packagesDir = Path.Combine(executingDirectory, "packages")
     let packagesCache = Dictionary<string, NuGetPackage>()
     let packageSource = Config.DefaultNuGetSource
@@ -139,7 +145,7 @@ type NuGetManager (executingDirectory : string) =
         
         let version = defaultArg version ""
         let key = String.Format("{0}/{1}/{2}", nugetPackage, version, prerelease)
-
+        printfn "key: %s" key
         lock (syncObject) (fun() ->
 
             if packagesCache.ContainsKey(key) then

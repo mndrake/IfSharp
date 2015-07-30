@@ -183,7 +183,8 @@ module App =
         printfn "Starting ipython..."
         let p = new Process()
         p.StartInfo.FileName <- "ipython"
-        p.StartInfo.Arguments <- "notebook --Session.key=''"
+        p.StartInfo.Arguments <- "notebook"
+//        p.StartInfo.Arguments <- "notebook --Session.key=''"
 //        p.StartInfo.Arguments <- "qtconsole --profile ifsharp"
         p.StartInfo.WorkingDirectory <- appData
 
@@ -207,6 +208,12 @@ module App =
             let fileName = args.[0]
             let json = File.ReadAllText(fileName)
             let connectionInformation = JsonConvert.DeserializeObject<ConnectionInformation>(json)
+
+            let x = connectionInformation.key
+            printfn "Found key %s" x
+            //let key = Encoding.ASCII.GetBytes(x)
+            //let key = Encoding.UTF8.GetBytes(x)
+            //printfn "Found bytes %A" key
 
             // startup 0mq stuff
             use context = NetMQContext.Create()

@@ -7,8 +7,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>IfSharp</RootNamespace>
     <AssemblyName>IfSharp</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
-    <UseMSBuildEngine>False</UseMSBuildEngine>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DebugSymbols>true</DebugSymbols>
@@ -62,9 +61,9 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Config.fs" />
     <Compile Include="IfSharpResources.fs" />
+    <Compile Include="Util.fs" />
     <Compile Include="NuGetManager.fs" />
     <Compile Include="FsCompiler.fs" />
-    <Compile Include="Util.fs" />
     <Compile Include="Charting.fs" />
     <Compile Include="MainTypes.fs" />
     <Compile Include="ShellMessages.fs" />
@@ -87,6 +86,7 @@
       <Link>FSharp.Core.sigdata</Link>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="app.config" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

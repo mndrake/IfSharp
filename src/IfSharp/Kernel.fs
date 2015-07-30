@@ -7,6 +7,7 @@ open System.IO
 open System.Reflection
 open System.Text
 open System.Threading
+open System.Security.Cryptography
 
 //open FSharp.Charting
 
@@ -122,18 +123,37 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
         #if DEBUG
         printfn "send: %A" content
         #endif
-        let header = createHeader messageType envelope
+
+        let hmac = new HMACSHA256(encode connectionInformation.key)
+
+        let toHexString (array:byte[]) =
+            let hex = new StringBuilder(array.Length * 2)
+            for b in array do
+                hex.AppendFormat("{0:x2}", b) |> ignore
+            hex.ToString()
+
+        let headerJson = serialize <| createHeader messageType envelope
+        let ParentHeaderJson = serialize envelope.Header
+        let metadataJson = "{}"
+        let contentJson = serialize content
+
+        let hmacSignature = 
+            [headerJson; ParentHeaderJson; metadataJson; contentJson]
+            |> String.Concat
+            |> encode 
+            |> hmac.ComputeHash
+            |> toHexString
 
         for ident in envelope.Identifiers do
             socket <~| (encode ident) |> ignore
 
         socket
-            <~| (encode "<IDS|MSG>")
-            <~| (encode "")
-            <~| (encode (serialize header))
-            <~| (encode (serialize envelope.Header))
-            <~| (encode "{}")
-            <<| (encode (serialize content))
+            <~| encode "<IDS|MSG>"
+            <~| encode hmacSignature
+            <~| encode headerJson
+            <~| encode ParentHeaderJson
+            <~| encode metadataJson
+            <<| encode contentJson
         
     /// Convenience method for sending the state of the kernel
     let sendState (envelope) (state) =

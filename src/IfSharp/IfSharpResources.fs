@@ -12,4 +12,4 @@ module IfSharpResources =
         use reader = new StreamReader(asm.GetManifestResourceStream(name), Encoding.UTF8)
         reader.ReadToEnd()
 
-    let kernel_json() = getString("Resources.kernel.json")
+    let kernel_json() = getString("kernel.json")
