@@ -158,7 +158,9 @@ type Histogram =
 
     static member bins value (chart: ChartTypes.HistogramChart) =
         chart.Bins <- value
-        chart    
+        chart   
+
+open Deedle
 
 type Chart =
 
@@ -168,6 +170,27 @@ type Chart =
         if XTitle.IsSome then chart.xLabel <- XTitle.Value
         if YTitle.IsSome then chart.yLabel <- YTitle.Value
         chart
+
+    static member Line(data,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle) = 
+        let chart = ChartTypes.LineChart()
+        chart.addSeries(data |> Seq.map(fun (k,v) -> float k, v))
+        if XTitle.IsSome then chart.xLabel <- XTitle.Value
+        if YTitle.IsSome then chart.yLabel <- YTitle.Value
+        chart
+
+    static member Line(data,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle) = 
+        let chart = ChartTypes.LineChart()
+        chart.addSeries(data |> Seq.map(fun (k,v) -> float k, float v))
+        if XTitle.IsSome then chart.xLabel <- XTitle.Value
+        if YTitle.IsSome then chart.yLabel <- YTitle.Value
+        chart
+
+    static member Line(data,?Name,?Title,?Labels, ?Color,?XTitle,?YTitle) = 
+        let chart = ChartTypes.LineChart()
+        chart.addSeries(data |> Seq.map(fun (k,v) -> k, float v))
+        if XTitle.IsSome then chart.xLabel <- XTitle.Value
+        if YTitle.IsSome then chart.yLabel <- YTitle.Value
+        chart    
 
     static member Histogram(data, ?Bins) =
         let chart = ChartTypes.HistogramChart()
@@ -179,3 +202,6 @@ type Chart =
         let chart = ChartTypes.BarChart()
         chart.Data <- data |> Seq.map (fun (l,v) -> {ChartTypes.BarPlotItem.label=l; ChartTypes.BarPlotItem.value=v; ChartTypes.BarPlotItem.baseline=0.; ChartTypes.BarPlotItem.prediction=0.})
         chart
+
+    static member Line(data:Series<'K, 'V>, ?Name, ?Title, ?Labels, ?Color, ?XTitle, ?YTitle) =
+      Chart.Line(Series.observations data, ?Name=Name, ?Title=Title, ?Labels=Labels, ?Color=Color, ?XTitle=XTitle, ?YTitle=YTitle)

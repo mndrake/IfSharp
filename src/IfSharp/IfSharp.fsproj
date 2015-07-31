@@ -52,6 +52,10 @@
     <Reference Include="FSharp.Core">
       <HintPath>..\..\packages\FSharp.Core.3.1.2.1\lib\net40\FSharp.Core.dll</HintPath>
     </Reference>
+    <Reference Include="Deedle">
+      <HintPath>..\..\packages\Deedle.1.2.3\lib\net40\Deedle.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\" />
@@ -68,6 +72,7 @@
     <Compile Include="MainTypes.fs" />
     <Compile Include="ShellMessages.fs" />
     <Compile Include="Evaluation.fs" />
+    <Compile Include="DeedleFormat.fs" />
     <Compile Include="Printers.fs" />
     <Compile Include="Kernel.fs" />
     <Compile Include="App.fs" />

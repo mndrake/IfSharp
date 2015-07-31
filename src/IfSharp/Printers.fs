@@ -83,6 +83,13 @@ module Printers =
         )
 
         // add chart printer
-        addDisplayPrinter (fun (x: IfSharp.Charting.ChartTypes.ChartBase) -> 
+        addDisplayPrinter (fun (x:IfSharp.Charting.ChartTypes.ChartBase) -> 
             { ContentType = "text/html"; Data = x.ToHtml()}
         )
+
+        // add Deedle printer
+        addDisplayPrinter (fun (x:Deedle.Internal.IFsiFormattable) ->
+            {
+                ContentType = "text/html"
+                Data = DeedleFormat.getHtml(box x)
+            })  
