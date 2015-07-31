@@ -163,6 +163,7 @@ module App =
         createDir kernelDir
 
         let kernelFile = Path.Combine(kernelDir, "kernel.json")
+        let iconFile = Path.Combine(kernelDir, "logo-64x64.png")
 
         if forceInstall || (File.Exists(kernelFile) = false) then
             
@@ -173,19 +174,23 @@ module App =
                 | true  -> String.Format("\"mono\",\"{0}\"", thisExecutable)
                 | false -> String.Format("\"{0}\"", thisExecutable)
 
-            let json = IfSharpResources.kernel_json().Replace("%s", executable)
-            
-            let kernelFile = Path.Combine(kernelDir, "kernel.json")
+            let json = IfSharpResources.kernel_json().Replace("%s", executable)            
             printfn "saving custom kernel file [%s]" kernelFile
             File.WriteAllText(kernelFile, json)
 
+        if forceInstall || (File.Exists(iconFile) = false) then
+
+            printfn "Icon file does not exist, performing install..."
+
+            let bytes = IfSharpResources.image_bytes()
+            printfn "saving custom image file [%s]" kernelFile
+            File.WriteAllBytes(iconFile, bytes)
+            
         
         printfn "Starting ipython..."
         let p = new Process()
         p.StartInfo.FileName <- "ipython"
         p.StartInfo.Arguments <- "notebook"
-//        p.StartInfo.Arguments <- "notebook --Session.key=''"
-//        p.StartInfo.Arguments <- "qtconsole --profile ifsharp"
         p.StartInfo.WorkingDirectory <- appData
 
         // tell the user something bad happened
@@ -209,37 +214,8 @@ module App =
             let json = File.ReadAllText(fileName)
             let connectionInformation = JsonConvert.DeserializeObject<ConnectionInformation>(json)
 
-            let x = connectionInformation.key
-            printfn "Found key %s" x
-            //let key = Encoding.ASCII.GetBytes(x)
-            //let key = Encoding.UTF8.GetBytes(x)
-            //printfn "Found bytes %A" key
-
-            // startup 0mq stuff
-            use context = NetMQContext.Create()
-
-            // heartbeat
-            use hbSocket = context.CreateResponseSocket()
-            hbSocket.Bind(String.Format("{0}://{1}:{2}", connectionInformation.transport, connectionInformation.ip, connectionInformation.hb_port))
-        
-            // shell
-            use shellSocket = context.CreateRouterSocket()
-            shellSocket.Bind(String.Format("{0}://{1}:{2}", connectionInformation.transport, connectionInformation.ip, connectionInformation.shell_port))
-        
-            // control
-            use controlSocket = context.CreateRouterSocket()
-            controlSocket.Bind(String.Format("{0}://{1}:{2}", connectionInformation.transport, connectionInformation.ip, connectionInformation.control_port))
-
-            // stdin
-            use stdinSocket = context.CreateRouterSocket()
-            stdinSocket.Bind(String.Format("{0}://{1}:{2}", connectionInformation.transport, connectionInformation.ip, connectionInformation.stdin_port))
-
-            // iopub
-            use iopubSocket = context.CreatePublisherSocket()
-            iopubSocket.Bind(String.Format("{0}://{1}:{2}", connectionInformation.transport, connectionInformation.ip, connectionInformation.iopub_port))
-
             // start the kernel
-            Kernel <- Some (IfSharpKernel(connectionInformation, iopubSocket, shellSocket, hbSocket, controlSocket, stdinSocket))
+            Kernel <- Some (IfSharpKernel(connectionInformation))
             Kernel.Value.StartAsync()
 
             // block forever

@@ -12,4 +12,12 @@ module IfSharpResources =
         use reader = new StreamReader(asm.GetManifestResourceStream(name), Encoding.UTF8)
         reader.ReadToEnd()
 
+    let getImageBytes(name) =
+        use memstream = new MemoryStream()
+        let asm = Assembly.GetExecutingAssembly()
+        asm.GetManifestResourceStream(name).CopyTo(memstream)
+        memstream.ToArray()
+
     let kernel_json() = getString("kernel.json")
+
+    let image_bytes() = getImageBytes("logo-64x64.png")

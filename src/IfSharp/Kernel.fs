@@ -14,9 +14,31 @@ open System.Security.Cryptography
 open Newtonsoft.Json
 open NetMQ
 open NetMQ.Sockets
-open zmq
 
-type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : NetMQSocket, shellSocket : NetMQSocket, hbSocket : NetMQSocket, controlSocket : NetMQSocket, stdinSocket : NetMQSocket) = 
+type IfSharpKernel(connectionInformation : ConnectionInformation) = 
+
+    // startup 0mq stuff
+    let context = NetMQContext.Create()
+
+    // heartbeat
+    let hbSocket = context.CreateRequestSocket()
+    do hbSocket.Bind(String.Format("{0}://{1}:{2}", connectionInformation.transport, connectionInformation.ip, connectionInformation.hb_port))
+        
+    // shell
+    let shellSocket = context.CreateRouterSocket()
+    do shellSocket.Bind(String.Format("{0}://{1}:{2}", connectionInformation.transport, connectionInformation.ip, connectionInformation.shell_port))
+        
+    // control
+    let controlSocket = context.CreateRouterSocket()
+    do controlSocket.Bind(String.Format("{0}://{1}:{2}", connectionInformation.transport, connectionInformation.ip, connectionInformation.control_port))
+
+    // stdin
+    let stdinSocket = context.CreateRouterSocket()
+    do stdinSocket.Bind(String.Format("{0}://{1}:{2}", connectionInformation.transport, connectionInformation.ip, connectionInformation.stdin_port))
+
+    // iopub
+    let ioSocket = context.CreatePublisherSocket()
+    do ioSocket.Bind(String.Format("{0}://{1}:{2}", connectionInformation.transport, connectionInformation.ip, connectionInformation.iopub_port))
 
     let data = new List<BinaryOutput>()
     let payload = new List<Payload>()
@@ -49,16 +71,13 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
         logMessage message
 
     /// Decodes byte array into a string using UTF8
-    let decode (bytes) =
-        Encoding.UTF8.GetString(bytes)
+    let decode (bytes) = Encoding.UTF8.GetString(bytes)
 
     /// Encodes a string into a byte array using UTF8
-    let encode (str : string) =
-        Encoding.UTF8.GetBytes(str)
+    let encode (str : string) = Encoding.UTF8.GetBytes(str)
 
     /// Deserializes a dictionary from a JSON string
-    let deserializeDict (str) =
-        JsonConvert.DeserializeObject<Dictionary<string, string>>(str)
+    let deserializeDict (str) = JsonConvert.DeserializeObject<Dictionary<string, string>>(str)
 
     /// Serializes any object into JSON
     let serialize (obj) =
@@ -144,16 +163,17 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
             |> hmac.ComputeHash
             |> toHexString
 
-        for ident in envelope.Identifiers do
-            socket <~| (encode ident) |> ignore
+        let msg = NetMQMessage()
 
-        socket
-            <~| encode "<IDS|MSG>"
-            <~| encode hmacSignature
-            <~| encode headerJson
-            <~| encode ParentHeaderJson
-            <~| encode metadataJson
-            <<| encode contentJson
+        for ident in envelope.Identifiers do msg.Append ident
+
+        msg.Append "<IDS|MSG>"
+        msg.Append hmacSignature
+        msg.Append headerJson
+        msg.Append ParentHeaderJson
+        msg.Append metadataJson
+        msg.Append contentJson
+        socket.SendMessage(msg)
         
     /// Convenience method for sending the state of the kernel
     let sendState (envelope) (state) =
@@ -169,7 +189,10 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
 
     /// Handles a 'kernel_info_request' message
     let kernelInfoRequest(msg : KernelMessage) (content : KernelRequest) = 
-        //printfn "** kernel_info_request **"
+        #if DEBUG
+        printfn "** kernel_info_request **"
+        #endif
+
         let content = 
             {
                 protocol_version = "5.0"; 
@@ -315,33 +338,33 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
 
         sendMessage (shellSocket) (msg) ("complete_reply") (newContent)
 
-    /// Handles a 'connect_request' message
-    let connectRequest (msg : KernelMessage) (content : ConnectRequest) = 
+//    /// Handles a 'connect_request' message
+//    let connectRequest (msg : KernelMessage) (content : ConnectRequest) = 
+//
+//        let reply =
+//            {
+//                hb_port = connectionInformation.hb_port;
+//                iopub_port = connectionInformation.iopub_port;
+//                shell_port = connectionInformation.shell_port;
+//                stdin_port = connectionInformation.stdin_port; 
+//            }
+//
+//        logMessage "connectRequest()"
+//        sendMessage shellSocket msg "connect_reply" reply
 
-        let reply =
-            {
-                hb_port = connectionInformation.hb_port;
-                iopub_port = connectionInformation.iopub_port;
-                shell_port = connectionInformation.shell_port;
-                stdin_port = connectionInformation.stdin_port; 
-            }
-
-        logMessage "connectRequest()"
-        sendMessage shellSocket msg "connect_reply" reply
-
-    /// Handles a 'shutdown_request' message
-    let shutdownRequest (msg : KernelMessage) (content : ShutdownRequest) =
-
-        // TODO: actually shutdown        
-        let reply = { restart = true; }
-
-        sendMessage shellSocket msg "shutdown_reply" reply
-
-    /// Handles a 'history_request' message
-    let historyRequest (msg : KernelMessage) (content : HistoryRequest) =
-
-        // TODO: actually handle this
-        sendMessage shellSocket msg "history_reply" { history = [] }
+//    /// Handles a 'shutdown_request' message
+//    let shutdownRequest (msg : KernelMessage) (content : ShutdownRequest) =
+//
+//        // TODO: actually shutdown        
+//        let reply = { restart = true; }
+//
+//        sendMessage shellSocket msg "shutdown_reply" reply
+//
+//    /// Handles a 'history_request' message
+//    let historyRequest (msg : KernelMessage) (content : HistoryRequest) =
+//
+//        // TODO: actually handle this
+//        sendMessage shellSocket msg "history_reply" { history = [] }
 
     /// Handles a 'inspect_request' message
     let inspectRequest (msg : KernelMessage) (content : InspectRequest) =
@@ -420,7 +443,6 @@ type IfSharpKernel(connectionInformation : ConnectionInformation, ioSocket : Net
         try
             while true do
                 let bytes = hbSocket.Receive()
-                let str = decode bytes
                 hbSocket.Send(bytes)
         with
         | ex -> handleException ex
