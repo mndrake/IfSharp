@@ -8,8 +8,8 @@ module DeedleFormat =
 
     // --------------------------------------------------------------------------------------
     // How many columns and rows from frame should be rendered
-    let startColumnCount = 3
-    let endColumnCount = 3
+    let startColumnCount = 6
+    let endColumnCount = 6
     let startRowCount = 8
     let endRowCount = 4
     // How many items from a series should be rendered
