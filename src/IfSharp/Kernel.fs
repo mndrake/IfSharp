@@ -15,6 +15,7 @@ open Newtonsoft.Json
 open NetMQ
 open NetMQ.Sockets
 
+
 type IfSharpKernel(connectionInformation : ConnectionInformation) = 
 
     // startup 0mq stuff
@@ -54,6 +55,8 @@ type IfSharpKernel(connectionInformation : ConnectionInformation) =
         let code = File.ReadAllText(includeFile)
         String.Format(code, dir.Replace("\\", "\\\\"))
 
+    static let mutable logMutex = new Mutex()
+        
     /// Splits the message up into lines and writes the lines to shell.log
     let logMessage (msg : string) =
         let fileName = "shell.log"
@@ -62,8 +65,10 @@ type IfSharpKernel(connectionInformation : ConnectionInformation) =
             |> Seq.filter (fun x -> x <> "")
             |> Seq.map (fun x -> String.Format("{0:yyyy-MM-dd HH:mm:ss} - {1}", DateTime.Now, x))
             |> Seq.toArray
-        
+
+        logMutex.WaitOne() |> ignore
         File.AppendAllLines(fileName, messages)
+        logMutex.ReleaseMutex()
 
     /// Logs the exception to the specified file name
     let handleException (ex : exn) = 
