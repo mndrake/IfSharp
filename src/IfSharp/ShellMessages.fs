@@ -370,6 +370,12 @@ type ClearOutput =
         other: bool;
     } 
 
+type CommOpen =
+    {
+        comm_id : string;
+        data : obj
+    }
+
 type ShellMessage = 
     // execute
     | ExecuteRequest of ExecuteRequest
@@ -400,6 +406,9 @@ type ShellMessage =
     // input / output
     | Pyout of Pyout
     | DisplayData of DisplayData
+
+    // comm
+    | CommOpen of CommOpen
 
 type Header = 
     {
@@ -433,4 +442,5 @@ module ShellMessages =
         //| "connect_request"      -> ConnectRequest (JsonConvert.DeserializeObject<ConnectRequest>(messageJson))
         | "kernel_info_request"  -> KernelRequest (JsonConvert.DeserializeObject<KernelRequest>(messageJson))
         //| "shutdown_request"     -> ShutdownRequest (JsonConvert.DeserializeObject<ShutdownRequest>(messageJson))
+        | "comm_open"            -> CommOpen (JsonConvert.DeserializeObject<CommOpen>(messageJson))
         | _                      -> failwith ("Unsupported messageType: " + messageType)
