@@ -13,9 +13,9 @@ See our [release repository](https://github.com/BayardRock/IfSharp/releases). Al
 2. Install [IPython](http://ipython.org/install.html)
 3. Run: "ipython profile create ifsharp" in your user directory
 4. Open the iF# solution file, restore nuget packages, and compile it
-5. Copy the files from IfSharp\ipython-profile to the iFSharp profile directory
-6. Open up the copied "ipython_config.py" file and replace "%s" with the path of your compiled ifsharp executable. E.g. "C:\\git\\ifsharp\\bin\\Release\\ifsharp.exe" 
-7. Run: "ipython notebook --profile ifsharp" to launch the notebook process with the F# kernel.
+5. Create the following file in %programdata%\jupyter\kernels\ifsharp\kernel.json:
+	{ "display_name": "fsharp", "language": "fsharp", "argv": [ "path-to-IFSharp-bin\ifsharp.exe", "{connection_file}" ] }
+6. Run: "jupyter notebook" to launch the notebook process.  TODO: Launch with the F# kernel.
 
 # Screens
 ## Intellisense
