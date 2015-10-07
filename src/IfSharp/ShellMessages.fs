@@ -373,7 +373,8 @@ type ClearOutput =
 type CommOpen =
     {
         comm_id : string;
-        data : obj
+        target_name: string;
+        data : Dictionary<string,obj>
     }
 
 type ShellMessage = 

@@ -54,6 +54,7 @@ type IfSharpKernel(connectionInformation : ConnectionInformation) =
         let code = File.ReadAllText(includeFile)
         String.Format(code, dir.Replace("\\", "\\\\"))
 
+    let mutex = new Object()
     /// Splits the message up into lines and writes the lines to shell.log
     let logMessage (msg : string) =
         let fileName = "shell.log"
@@ -62,13 +63,14 @@ type IfSharpKernel(connectionInformation : ConnectionInformation) =
             |> Seq.filter (fun x -> x <> "")
             |> Seq.map (fun x -> String.Format("{0:yyyy-MM-dd HH:mm:ss} - {1}", DateTime.Now, x))
             |> Seq.toArray
-        // todo: locking is needed.
-        try
-            File.AppendAllLines(fileName, messages)
-        with
-        | e ->
-            eprintfn "Warning: Couldn't log messages: %s" e.Message
-            messages |> Seq.iter (eprintfn "\t%s")
+
+        lock mutex (fun () ->
+            try
+                File.AppendAllLines(fileName, messages)
+            with
+            | e ->
+                eprintfn "Warning: Couldn't log messages: %s" e.Message
+                messages |> Seq.iter (eprintfn "\t%s"))
 
     /// Logs the exception to the specified file name
     let handleException (ex : exn) = 
