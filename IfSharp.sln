@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
-VisualStudioVersion = 12.0.21005.1
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{333CAF5A-8808-4E94-9B0C-3EFE86B727AF}"
 	ProjectSection(SolutionItems) = preProject
@@ -94,7 +94,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "lib", "lib", "{8BA6BD71-43A
 		lib\README.md = lib\README.md
 	EndProjectSection
 EndProject
-Project("{f2a71f9b-5d33-465a-a702-920d77279786}") = "IfSharp", "src\IfSharp\IfSharp.fsproj", "{720D635D-1450-4EEA-8DCA-369329F4E5BC}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "IfSharp", "src\IfSharp\IfSharp.fsproj", "{720D635D-1450-4EEA-8DCA-369329F4E5BC}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -107,6 +107,9 @@ Global
 		{720D635D-1450-4EEA-8DCA-369329F4E5BC}.Release|x64.ActiveCfg = Release|x64
 		{720D635D-1450-4EEA-8DCA-369329F4E5BC}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{A8428CDC-273B-434D-AAA2-0D0164E3D329} = {9D4EDE1C-AB08-4800-9A57-4689DA45B701}
 		{E7CBA335-71DC-45BC-BB08-8837F866EDB9} = {9D4EDE1C-AB08-4800-9A57-4689DA45B701}
@@ -114,8 +117,5 @@ Global
 		{7B100429-EB1D-4D08-919F-5F9D6D148BFA} = {F420A7BF-AF5F-4C69-99D3-C0DA09FA1F19}
 		{45519D10-5973-41C3-A8D0-BCBF0008044D} = {F5A3E866-86FB-44AD-9ED1-DB65D6EB0058}
 		{3AAFA64D-CBB6-488E-B395-6A1E7CB554CE} = {45519D10-5973-41C3-A8D0-BCBF0008044D}
-	EndGlobalSection
-	GlobalSection(SolutionProperties) = preSolution
-		HideSolutionNode = FALSE
 	EndGlobalSection
 EndGlobal
