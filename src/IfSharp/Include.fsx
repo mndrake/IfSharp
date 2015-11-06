@@ -18,3 +18,4 @@
 open IfSharp.Kernel
 open IfSharp.Kernel.Globals
 open IfSharp.Charting
+open Deedle

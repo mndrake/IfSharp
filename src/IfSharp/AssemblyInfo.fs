@@ -1,20 +1,12 @@
-﻿namespace IfSharp
+﻿namespace System
 open System.Reflection
-open System.Runtime.CompilerServices
 
-[<assembly: AssemblyTitle("IfSharp")>]
-[<assembly: AssemblyDescription("")>]
-[<assembly: AssemblyConfiguration("")>]
-[<assembly: AssemblyCompany("")>]
-[<assembly: AssemblyProduct("")>]
-[<assembly: AssemblyCopyright("")>]
-[<assembly: AssemblyTrademark("")>]
+[<assembly: AssemblyTitleAttribute("IfSharp")>]
+[<assembly: AssemblyProductAttribute("IfSharp")>]
+[<assembly: AssemblyDescriptionAttribute("A short summary of your project.")>]
+[<assembly: AssemblyVersionAttribute("2.0.2")>]
+[<assembly: AssemblyFileVersionAttribute("2.0.2")>]
+do ()
 
-// The assembly version has the format {Major}.{Minor}.{Build}.{Revision}
-
-[<assembly: AssemblyVersion("1.0.0.0")>]
-
-//[<assembly: AssemblyDelaySign(false)>]
-//[<assembly: AssemblyKeyFile("")>]
-
-()
+module internal AssemblyVersionInformation =
+    let [<Literal>] Version = "2.0.2"
